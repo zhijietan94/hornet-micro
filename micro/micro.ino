@@ -1,14 +1,11 @@
 #include <Servo.h>
 #include <Adafruit_NeoPixel.h>
 
-#define DEBUG false //Set to true to see detailed debugging print messages
-
-//------IMU MANAGEMENT----------
 #include <Wire.h>
 #include <HMC5883L.h>
 #include <MPU6050.h>
-HMC5883L compass;
-MPU6050 mpu;
+
+#define DEBUG false //Set to true to see detailed debugging print messages
 
 //------POWER MANAGEMENT--------
 #define CURR_SENSOR A2
@@ -46,6 +43,8 @@ char msg[2];
 boolean msgRead = false;
 
 //------IMU MANAGEMENT----------
+HMC5883L compass;
+MPU6050 mpu;
 // Timers
 unsigned long gyroTimer = 0;
 float gyroTimeStep = 0.01;
