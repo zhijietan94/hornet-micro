@@ -424,7 +424,6 @@ void setStatusLED(int colour) {
 void updateIMU() {
   //Update Gyro
   Vector normG = mpu.readNormalizeGyro();
-
   pitch = pitch + normG.YAxis * gyroTimeStep;
   roll = roll + normG.XAxis * gyroTimeStep;
   yaw = yaw + normG.ZAxis * gyroTimeStep;
@@ -437,7 +436,7 @@ void updateIMU() {
   // You can find your declination on: http://magnetic-declination.com/
   // (+) Positive or (-) for negative
   // Formula: (deg + (min / 60.0)) / (180 / M_PI);
-  float declinationAngle = (4.0 + (26.0 / 60.0)) / (180 / M_PI);
+  float declinationAngle = (0.0 + (26.0 / 60.0)) / (180 / M_PI);
   headingRad += declinationAngle;
 
   // Correct for heading < 0deg and heading > 360deg
@@ -450,6 +449,9 @@ void updateIMU() {
   heading = headingRad * 180 / M_PI;
 }
 
+/*
+ * Formats the compass heading into a printable format of specific length
+ */
 String getHeading() {
   String degree = String(heading);
   String output = String("");
@@ -469,24 +471,36 @@ String getHeading() {
   return output;
 }
 
+/*
+ * Formats the pitch angle into a printable format of specific length
+ */
 String getPitch() {
   String data = String(pitch);
   String output = processPYR(data);
   return output;
 }
 
+/*
+ * Formats the roll angle into a printable format of specific length
+ */
 String getRoll() {
   String data = String(roll);
   String output = processPYR(data);
   return output;
 }
 
+/*
+ * Formats the yaw angle into a printable format of specific length
+ */
 String getYaw() {
   String data = String(yaw);
   String output = processPYR(data);
   return output;
 }
 
+/*
+ * Pads input data with negative/positive sign and leading zeros 
+ */
 String processPYR(String data) {
   String output = String("");
   if (data.startsWith("-")) {
@@ -518,6 +532,5 @@ String processPYR(String data) {
         break;
     }
   }
-
   return output;
 }
