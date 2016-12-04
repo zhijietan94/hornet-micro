@@ -25,4 +25,5 @@ Ino code for 3rd party Micro that:
 - IMU: HMC5883L - https://github.com/jarzebski/Arduino-HMC5883L (cannot be found in Library Manager)
 - IMU: MPU6050 - https://github.com/jarzebski/Arduino-MPU6050 (cannot be found in Library Manager)
 - Addressable RGB LED: Adafruit NeoPixel Library - https://github.com/adafruit/Adafruit_NeoPixel (can download from Library Manager in Arduino IDE)
+
 For information on how to install libraries, google it.
