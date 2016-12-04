@@ -1,7 +1,7 @@
 #include <Servo.h>
 #include <Adafruit_NeoPixel.h>
 
-#define DEBUG false
+#define DEBUG false //Set to true to see detailed debugging print messages
 
 //------IMU MANAGEMENT----------
 #include <Wire.h>
@@ -178,24 +178,35 @@ void loop() {
   }
 }
 
+/*
+ * Sends IMU information and Power (Voltage and Charge) over serial. 
+ */
 void writeSerial() {
   String toSend = String("");
   toSend = toSend + "Sh/" + getHeading() + "p/" + getPitch() + "r/" + getRoll() + "y/" + getYaw() + "v/" + getVoltage() + "c/" + getCharge() + "E"; 
   Serial.println(toSend);
 }
 
+/*
+ * Reads serial data from Odroid.
+ * Expected data format: S**E, where * refers to a number between 0-9 (inclusive)
+ * First number indicates the state of the vehicle (i.e. ready, launching, idle, etc)
+ * Second number indicates the state of the servo (lock = 0, release = 1)
+ * 
+ * Data integrity is ensured by only accepting data of the exact format (prevent any loss of data in between/gaps)
+ */
 void readSerial() {
   if (Serial.available() > 0){
+    //Reads starting character
     char sChar = Serial.read();
-    if (sChar == 'S'){ //Starting character read
+    if (sChar == 'S'){
       msgRead = true;
-      //Read data characters
+      //Read 2 data bytes
       for (int j=0;j<2;j++){
         char data = Serial.read();
         if (data >= '0' && data <= '9') {
           msg[j] = data; 
-        }
-        else {
+        } else {
           msgRead = false;
           break;
         }
@@ -206,13 +217,12 @@ void readSerial() {
         msgRead = false;
       }
     }
-    if (msgRead) {
-      
+    
+    if (msgRead) { //Message successfully read
       //Set status LED based on msg[0]
       setStatusLED((msg[0] - '0'));
       //Actuate servo depending on msg[1]
       //Activate servo
-      
       msgRead = false;
     }
   }
@@ -222,7 +232,7 @@ void readSerial() {
 void updateCharge() {
   updateCurr();
   updateVolt();
-  countCharge(current, voltage);
+  countCharge();
 
   if (DEBUG) {
     Serial.print("Current:");
@@ -302,7 +312,7 @@ String getCharge() {
  * Counts the amount of charge used during the last time_interval based on Charge = Current * Time
  * Sets the power LED lights to correspond to the existing voltage of the 
  */
-void countCharge(float current, float voltage) {
+void countCharge() {
   charge -= current * ((float)time_interval / 1000.0);
   if (voltage < BATT_MIN_VOLT) {
     setPowerLED(CLR_RED);
