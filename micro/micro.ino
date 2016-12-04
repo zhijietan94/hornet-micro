@@ -22,7 +22,6 @@ MPU6050 mpu;
 #define BATT_LOW_THRESHOLD 15.0
 #define BATT_HIGH_THRESHOLD 15.8
 #define BATT_MAX_CHARGE 21600 // 3600 sec * max 6A for 1 hour
-#define BATT_HIGH_CHARGE 20000
 #define BATT_LOW_CHARGE 5000
 
 //------SERVO MANAGEMENT--------
@@ -128,32 +127,32 @@ void setup() {
   setStatusLED(CLR_GREEN);
 
   //---------POWER MANAGEMENT---------
-  //Populate both arrays with equal value for start
+  //Init rolling average arrays with equal value
   for (int i = 0; i < 10; i++) {
     curr_avg[i] = analogRead(CURR_SENSOR);
     curr_sum += curr_avg[i];
     volt_avg[i] = analogRead(VOLT_SENSOR);
     volt_sum += volt_avg[i];
   }
-  //Wait for battery to be detected
-    if (DEBUG) Serial.println("Waiting to detect battery...");
+  //Wait for power source > 14.4V to be detected 
+    if (DEBUG) Serial.println("Waiting to detect power source > 14.4V...");
     do {
       updateVolt();
       updateAvgVoltCurr();
     } while (voltage < BATT_MIN_VOLT);
 
-  if (DEBUG) Serial.println("Detected battery, waiting for 5s to start up..");
+  if (DEBUG) Serial.println("Detected power source, waiting for 2s to start up..");
   power_timer = millis();
-  while (millis() - power_timer < 5000) {
+  while (millis() - power_timer < 2000) {
     updateVolt();
     updateAvgVoltCurr();
   }
 
-  if (DEBUG) Serial.println("Starting counting mode..");
+  if (DEBUG) Serial.println("Beginning operations...");
   //Initialise variable
   power_timer = millis();
   //Initialise battery charge count based on voltage
-  setChargeUsingVoltage(voltage);
+  setChargeUsingVoltage();
   //------------END OF POWER MANAGEMENT-------
 
   gyroTimer = millis();
@@ -327,30 +326,11 @@ void countCharge() {
  * This function sets the charge of the power source based on the existing voltage of the source.
  * Mapping range is pre-determined manually
  */ 
-void setChargeUsingVoltage(float voltage) {
-  if (voltage > BATT_HIGH_THRESHOLD) {
-    charge = map(voltage * 1000, BATT_HIGH_THRESHOLD * 1000, BATT_MAX_VOLT * 1000, BATT_HIGH_CHARGE, BATT_MAX_CHARGE);
-
-    if (DEBUG) {
-      Serial.print("high voltage :");
-      Serial.println(charge);
-    }
-  }
-  else if (voltage < BATT_LOW_THRESHOLD) {
+void setChargeUsingVoltage() {
+  if (voltage < BATT_LOW_THRESHOLD) {
     charge = map(voltage * 1000, BATT_MIN_VOLT * 1000, BATT_LOW_THRESHOLD * 1000, 0, BATT_LOW_CHARGE);
-
-    if (DEBUG) {
-      Serial.print("low voltage :");
-      Serial.println(charge);
-    }
-  }
-  else { //voltage normal range
-    charge = map(voltage * 1000, BATT_LOW_THRESHOLD * 1000, BATT_HIGH_THRESHOLD * 1000, BATT_LOW_CHARGE, BATT_HIGH_CHARGE);
-
-    if (DEBUG) {
-      Serial.print("normal voltage :");
-      Serial.println(charge);
-    }
+  } else { //voltage normal range
+    charge = map(voltage * 1000, BATT_LOW_THRESHOLD * 1000, BATT_MAX_VOLT * 1000, BATT_LOW_CHARGE, BATT_MAX_CHARGE);
   }
 }
 //----END OF POWER MANAGEMENT-------
