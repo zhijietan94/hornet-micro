@@ -91,7 +91,7 @@ void setup() {
   setPowerLED(CLR_BLUE);
   status_led.begin();
   status_led.show();
-  setStatusLED(CLR_YELLOW);
+  setStatusLED(CLR_BLUE);
   //---------END OF LED STRIPS--------
 
   //Wait for serial to be established
@@ -129,7 +129,7 @@ void setup() {
   mpu.setThreshold(3);
   //------END OF IMU MANAGEMENT-------
   
-  setStatusLED(CLR_GREEN);
+  setStatusLED(CLR_OFF);
 
   //---------POWER MANAGEMENT---------
   //Init rolling average arrays with equal value
@@ -141,7 +141,7 @@ void setup() {
   }
   //Wait for power source > 14.4V to be detected 
   if (DEBUG) Serial.println("Waiting to detect power source > 14.4V...");
-    do {
+  do {
       updateVolt();
       updateAvgVoltCurr();
   } while (voltage < BATT_MIN_VOLT);
