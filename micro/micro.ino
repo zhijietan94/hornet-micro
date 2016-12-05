@@ -96,15 +96,21 @@ void setup() {
 
   //Wait for serial to be established
   while (!Serial) {
-    Serial.begin(115200);
+    Serial.begin(9600);
   }
 
   //---------IMU MANAGEMENT-----------  
-  while (!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G));
+  while (!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G)) {
+    delay(50);
+  }
+  delay(500);
   mpu.setI2CMasterModeEnabled(false);
   mpu.setI2CBypassEnabled(true) ;
   mpu.setSleepEnabled(false);
-  while (!compass.begin());
+  while (!compass.begin()) {
+    delay(50);
+  }
+  delay(500);
   // Set measurement range
   compass.setRange(HMC5883L_RANGE_1_3GA);
   // Set measurement mode
@@ -134,11 +140,12 @@ void setup() {
     volt_sum += volt_avg[i];
   }
   //Wait for power source > 14.4V to be detected 
-    if (DEBUG) Serial.println("Waiting to detect power source > 14.4V...");
+  if (DEBUG) Serial.println("Waiting to detect power source > 14.4V...");
     do {
       updateVolt();
       updateAvgVoltCurr();
-    } while (voltage < BATT_MIN_VOLT);
+  } while (voltage < BATT_MIN_VOLT);
+
 
   if (DEBUG) Serial.println("Detected power source, waiting for 2s to start up..");
   power_timer = millis();
@@ -427,6 +434,15 @@ void updateIMU() {
   roll = roll + normG.XAxis * gyroTimeStep;
   yaw = yaw + normG.ZAxis * gyroTimeStep;
 
+  if (DEBUG) {
+    Serial.print(pitch);
+    Serial.print("  |  ");
+    Serial.print(roll);
+    Serial.print("  |  ");
+    Serial.print(yaw);
+    Serial.println();
+  }
+  
   //Update Compass
   Vector normC = compass.readNormalize();
   float headingRad = atan2(normC.YAxis, normC.XAxis);
