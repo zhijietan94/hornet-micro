@@ -10,14 +10,11 @@
 //------POWER MANAGEMENT--------
 #define CURR_SENSOR A2
 #define CURR_OFFSET 530 //at this value when at 0A.
-#define VOLT_OFFSET 290 //set this after running the battery. 
-#define VOLT_AT_OFFSET 3.6 //analog reading 290 is at 5V. 
 #define VOLT_SENSOR A3
 #define ROLL_AVG_VALUE 20
 #define BATT_MAX_VOLT 16.8
-#define BATT_MIN_VOLT 14.4
-#define BATT_LOW_THRESHOLD 15.0
-#define BATT_HIGH_THRESHOLD 15.8
+#define BATT_MIN_VOLT 14.3
+#define BATT_LOW_THRESHOLD 15.4
 #define BATT_MAX_CHARGE 21600 // 3600 sec * max 6A for 1 hour
 #define BATT_LOW_CHARGE 5000
 
@@ -31,11 +28,13 @@
 #define PIN_STATUS_LED 7
 #define NUM_LED_POWER 3
 #define NUM_LED_STATUS 3
-#define CLR_GREEN 1
-#define CLR_YELLOW 2
-#define CLR_RED 3
-#define CLR_BLUE 4
 #define CLR_OFF 0
+#define CLR_BLUE 1
+#define CLR_GREEN 2
+#define CLR_YELLOW 3
+#define CLR_PINK 4
+#define CLR_RED 5
+#define CLR_WHITE 6
 
 unsigned long serialTimer = 0;
 unsigned long serialInterval = 100;
@@ -87,11 +86,13 @@ void setup() {
 
   //---------LED STRIPS---------------
   power_led.begin();
+  power_led.setBrightness(255);
   power_led.show();
-  setPowerLED(CLR_BLUE);
+  setPowerLED(CLR_PINK);
   status_led.begin();
+  status_led.setBrightness(255);
   status_led.show();
-  setStatusLED(CLR_BLUE);
+  setStatusLED(CLR_PINK);
   //---------END OF LED STRIPS--------
 
   //Wait for serial to be established
@@ -275,7 +276,7 @@ void updateAvgVoltCurr() {
  * Sets the value of voltage to the rolling average
  */
 void updateVolt() {
-  voltage = (volt_sum / ROLL_AVG_VALUE - VOLT_OFFSET) / (275.0 / 5) + VOLT_AT_OFFSET;
+  voltage = 0.0177 * (volt_sum / ROLL_AVG_VALUE) - 0.6665;  //Formula obtained by plotting in excel - Data: 17.0V 999 16.8V 988 15.8V 933 15.3 899 14.4 853 14.0V 830 
 }
 
 String getVoltage() {
@@ -357,6 +358,12 @@ void setPowerLED(int colour) {
       rgbVal[2] = 0;
       break;
 
+    case CLR_PINK:
+      rgbVal[0] = 255;
+      rgbVal[1] = 0;
+      rgbVal[2] = 255;
+      break;
+
     case CLR_RED:
       rgbVal[0] = 150;
       rgbVal[1] = 0;
@@ -369,7 +376,13 @@ void setPowerLED(int colour) {
       rgbVal[2] = 150;
       break;
 
-    case CLR_OFF:
+    case CLR_WHITE:
+      rgbVal[0] = 255;
+      rgbVal[1] = 255;
+      rgbVal[2] = 255;
+      break;
+
+    case CLR_OFF: //fall through
     default:
       rgbVal[0] = 0;
       rgbVal[1] = 0;
@@ -398,6 +411,12 @@ void setStatusLED(int colour) {
       rgbVal[2] = 0;
       break;
 
+    case CLR_PINK:
+      rgbVal[0] = 255;
+      rgbVal[1] = 0;
+      rgbVal[2] = 255;
+      break;
+
     case CLR_RED:
       rgbVal[0] = 150;
       rgbVal[1] = 0;
@@ -409,8 +428,14 @@ void setStatusLED(int colour) {
       rgbVal[1] = 0;
       rgbVal[2] = 150;
       break;
-
-    case CLR_OFF:
+          
+    case CLR_WHITE:
+      rgbVal[0] = 255;
+      rgbVal[1] = 255;
+      rgbVal[2] = 255;
+      break;
+  
+    case CLR_OFF: //fall through
     default:
       rgbVal[0] = 0;
       rgbVal[1] = 0;
