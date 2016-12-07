@@ -13,15 +13,15 @@
 #define VOLT_SENSOR A3
 #define ROLL_AVG_VALUE 20
 #define BATT_MAX_VOLT 16.8
-#define BATT_MIN_VOLT 14.3
+#define BATT_MIN_VOLT 14.5
 #define BATT_LOW_THRESHOLD 15.4
 #define BATT_MAX_CHARGE 21600 // 3600 sec * max 6A for 1 hour
 #define BATT_LOW_CHARGE 5000
 
 //------SERVO MANAGEMENT--------
-#define PIN_SERVO 9
-#define SERVO_HOLD 40
-#define SERVO_RELEASE 130
+#define PIN_SERVO 10
+#define SERVO_HOLD 1500
+#define SERVO_RELEASE 1900
 
 //------LED STRIPS--------------
 #define PIN_POWER_LED 8
@@ -79,11 +79,6 @@ void setup() {
   pinMode(CURR_SENSOR, INPUT);
   pinMode(VOLT_SENSOR, INPUT);
 
-  //---------SERVO MANAGEMENT---------
-  //servo.attach(PIN_SERVO);
-  //servo.write(SERVO_HOLD);
-  //-----END OF SERVO MANAGEMENT------
-
   //---------LED STRIPS---------------
   power_led.begin();
   power_led.setBrightness(255);
@@ -99,6 +94,12 @@ void setup() {
   while (!Serial) {
     Serial.begin(9600);
   }
+
+  //---------SERVO MANAGEMENT---------
+  //servo.attach(PIN_SERVO);
+  //servo.writeMicroseconds(SERVO_HOLD);
+  //servo_release = false
+  //-----END OF SERVO MANAGEMENT------
 
   //---------IMU MANAGEMENT-----------  
   while (!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G)) {
@@ -228,7 +229,11 @@ void readSerial() {
       //Set status LED based on msg[0]
       setStatusLED((msg[0] - '0'));
       //Actuate servo depending on msg[1]
-      //Activate servo
+      if (servo_release == false && msg[1] == '1') {
+        //servo.writeMicroseconds(SERVO_RELEASE);
+        servo_release = true;
+        if (DEBUG) Serial.println("Servo Released");
+      }
       msgRead = false;
     }
   }
