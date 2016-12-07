@@ -94,7 +94,7 @@ void setup() {
   while (!Serial) {
     Serial.begin(9600);
   }
-
+  if (DEBUG) Serial.println("Serial established");
   //---------SERVO MANAGEMENT---------
   //servo.attach(PIN_SERVO);
   //servo.writeMicroseconds(SERVO_HOLD);
@@ -105,6 +105,7 @@ void setup() {
   while (!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G)) {
     delay(50);
   }
+  if (DEBUG) Serial.println("mpu established");
   delay(500);
   mpu.setI2CMasterModeEnabled(false);
   mpu.setI2CBypassEnabled(true) ;
@@ -112,6 +113,7 @@ void setup() {
   while (!compass.begin()) {
     delay(50);
   }
+  if (DEBUG) Serial.println("compass established");
   delay(500);
   // Set measurement range
   compass.setRange(HMC5883L_RANGE_1_3GA);
