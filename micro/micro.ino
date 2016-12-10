@@ -11,10 +11,11 @@
 #define CURR_SENSOR A2
 #define CURR_OFFSET 530 //at this value when at 0A.
 #define VOLT_SENSOR A3
-#define ROLL_AVG_VALUE 20
+#define VOLT_OFFSET 1130
+#define ROLL_AVG_VALUE 40
 #define BATT_MAX_VOLT 16.8
 #define BATT_MIN_VOLT 14.5
-#define BATT_LOW_THRESHOLD 15.4
+#define BATT_LOW_THRESHOLD 15.5
 #define BATT_MAX_CHARGE 21600 // 3600 sec * max 6A for 1 hour
 #define BATT_LOW_CHARGE 5000
 
@@ -58,8 +59,8 @@ int curr_avg[ROLL_AVG_VALUE + 1];
 int volt_avg[ROLL_AVG_VALUE + 1];
 int curr_idx = 1;
 int volt_idx = 1;
-int curr_sum = 0;
-int volt_sum = 0;
+unsigned int curr_sum = 0;
+unsigned int volt_sum = 0;
 unsigned long power_timer = 0;
 unsigned long time_interval = 1000;
 float charge = BATT_MAX_CHARGE;
@@ -137,7 +138,7 @@ void setup() {
 
   //---------POWER MANAGEMENT---------
   //Init rolling average arrays with equal value
-  for (int i = 0; i < 10; i++) {
+  for (int i = 1; i <= ROLL_AVG_VALUE; i++) {
     curr_avg[i] = analogRead(CURR_SENSOR);
     curr_sum += curr_avg[i];
     volt_avg[i] = analogRead(VOLT_SENSOR);
@@ -183,7 +184,6 @@ void loop() {
     updateIMU();
     updateAvgVoltCurr();
     gyroTimer = millis();
-  
   }
 }
 
@@ -193,7 +193,7 @@ void loop() {
 void writeSerial() {
   String toSend = String("");
   toSend = toSend + "Sh/" + getHeading() + "p/" + getPitch() + "r/" + getRoll() + "y/" + getYaw() + "v/" + getVoltage() + "c/" + getCharge() + "E"; 
-  Serial.println(toSend);
+  //Serial.println(toSend);
 }
 
 /*
@@ -283,7 +283,12 @@ void updateAvgVoltCurr() {
  * Sets the value of voltage to the rolling average
  */
 void updateVolt() {
-  voltage = 0.0177 * (volt_sum / ROLL_AVG_VALUE) - 0.6665;  //Formula obtained by plotting in excel - Data: 17.0V 999 16.8V 988 15.8V 933 15.3 899 14.4 853 14.0V 830 
+  //voltage = 0.0177 * (volt_sum / ROLL_AVG_VALUE) - 0.6665;  //Formula obtained by plotting in excel - Data: 17.0V 999 16.8V 988 15.8V 933 15.3 899 14.4 853 14.0V 830 
+  float rawReading = map(volt_sum/ROLL_AVG_VALUE, 0, 1023, 0, 5000);
+  voltage = rawReading / 5100 * (5100 + 15000) - VOLT_OFFSET; //5100 and 15000 are the resistor values
+  Serial.print(volt_sum/ROLL_AVG_VALUE);
+  Serial.print("  || VOLT = ");
+  Serial.println(voltage);
 }
 
 String getVoltage() {
