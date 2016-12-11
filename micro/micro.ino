@@ -53,6 +53,7 @@ float pitch = 0;
 float roll = 0;
 float yaw = 0;
 float heading = 0;
+float accelXYZ[3];
 
 //------POWER MANAGEMENT--------
 int curr_avg[ROLL_AVG_VALUE + 1];
@@ -132,6 +133,11 @@ void setup() {
   // Set threshold sensivty. Default 3.
   // If you don't want use threshold, comment this line or set 0.
   mpu.setThreshold(3);
+
+  //Accelerometer
+  accelXYZ[0] = 0;
+  accelXYZ[1] = 0;
+  accelXYZ[2] = 0;
   //------END OF IMU MANAGEMENT-------
   
   setStatusLED(CLR_OFF);
@@ -150,7 +156,6 @@ void setup() {
       updateVolt();
       updateAvgVoltCurr();
   } while (voltage < BATT_MIN_VOLT);
-
 
   if (DEBUG) Serial.println("Detected power source, waiting for 2s to start up..");
   power_timer = millis();
@@ -192,8 +197,8 @@ void loop() {
  */
 void writeSerial() {
   String toSend = String("");
-  toSend = toSend + "Sh/" + getHeading() + "p/" + getPitch() + "r/" + getRoll() + "y/" + getYaw() + "v/" + getVoltage() + "c/" + getCharge() + "E"; 
-  //Serial.println(toSend);
+  toSend = toSend + "Sh/" + getHeading() + "p/" + getPitch() + "r/" + getRoll() + "y/" + getYaw() + "ax/" + getAccelX() + "ay/" + getAccelY() + "az/" + getAccelZ() + "v/" + getVoltage() + "c/" + getCharge() + "E"; 
+  Serial.println(toSend);
 }
 
 /*
@@ -248,7 +253,7 @@ void updateCharge() {
   countCharge();
 
   if (DEBUG) {
-    Serial.print("Current:");
+    Serial.print(" || Current:");
     Serial.print(current);
     Serial.print(" || Voltage:");
     Serial.print(voltage);
@@ -286,9 +291,6 @@ void updateVolt() {
   //voltage = 0.0177 * (volt_sum / ROLL_AVG_VALUE) - 0.6665;  //Formula obtained by plotting in excel - Data: 17.0V 999 16.8V 988 15.8V 933 15.3 899 14.4 853 14.0V 830 
   float rawReading = map(volt_sum/ROLL_AVG_VALUE, 0, 1023, 0, 5000);
   voltage = rawReading / 5100 * (5100 + 15000) - VOLT_OFFSET; //5100 and 15000 are the resistor values
-  Serial.print(volt_sum/ROLL_AVG_VALUE);
-  Serial.print("  || VOLT = ");
-  Serial.println(voltage);
 }
 
 String getVoltage() {
@@ -465,6 +467,12 @@ void setStatusLED(int colour) {
 
 //------IMU MANAGEMENT----------
 void updateIMU() {
+  //Update accelerometer
+  Vector normAccel = mpu.readNormalizeAccel();
+  accelXYZ[0] = normAccel.XAxis;
+  accelXYZ[1] = normAccel.YAxis;
+  accelXYZ[2] = normAccel.ZAxis;
+  
   //Update Gyro
   Vector normG = mpu.readNormalizeGyro();
   pitch = pitch + normG.YAxis * gyroTimeStep;
@@ -472,12 +480,19 @@ void updateIMU() {
   yaw = yaw + normG.ZAxis * gyroTimeStep;
 
   if (DEBUG) {
+    Serial.print(" || Accel[X]:");
+    Serial.print(accelXYZ[0]);
+    Serial.print(" || Accel[Y]:");
+    Serial.print(accelXYZ[1]);
+    Serial.print(" || Accel[Z]:");
+    Serial.print(accelXYZ[2]);
+    
+    Serial.print(" || Pitch:");
     Serial.print(pitch);
-    Serial.print("  |  ");
+    Serial.print(" || Roll:");
     Serial.print(roll);
-    Serial.print("  |  ");
-    Serial.print(yaw);
-    Serial.println();
+    Serial.print(" || Yaw:");
+    Serial.println(yaw);
   }
   
   //Update Compass
@@ -551,7 +566,7 @@ String getYaw() {
 }
 
 /*
- * Pads input data with negative/positive sign and leading zeros 
+ * Pads pyr data with negative/positive sign and leading zeros 
  */
 String processPYR(String data) {
   String output = String("");
@@ -586,3 +601,60 @@ String processPYR(String data) {
   }
   return output;
 }
+
+/*
+ * Formats accelX into a printable format of specific length
+ */
+String getAccelX() {
+  String data = String(accelXYZ[0]);
+  String output = processAccel(data);
+  return output;
+}
+
+/*
+ * Formats accelY into a printable format of specific length
+ */
+String getAccelY() {
+  String data = String(accelXYZ[1]);
+  String output = processAccel(data);
+  return output;
+}
+
+/*
+ * Formats accelZ into a printable format of specific length
+ */
+String getAccelZ() {
+  String data = String(accelXYZ[2]);
+  String output = processAccel(data);
+  return output;
+}
+
+/*
+ * Pads accel data with negative/positive sign and leading zeros 
+ */
+String processAccel(String data){
+  String output = String("");
+  if (data.startsWith("-")) {
+    switch (data.length()) {
+      case 5:
+        output = "-0" + data.substring(1);
+        break;
+
+      default:
+        output = "-" + data.substring(1);
+        break;
+    }
+  } else {
+    switch (data.length()) {
+      case 4:
+        output = "+0" + data;
+        break;
+
+      default:
+        output = "+" + data;
+        break;
+    }
+  }
+  return output;
+}
+
