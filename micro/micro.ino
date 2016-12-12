@@ -126,7 +126,7 @@ void setup() {
   // Set number of samples averaged
   compass.setSamples(HMC5883L_SAMPLES_8);
   // Set calibration offset. See HMC5883L_calibration.ino
-  compass.setOffset(0, 0);
+  compass.setOffset(-154, -75);
   // Calibrate gyroscope. The calibration must be at rest.
   // If you don't want calibrate, comment this line.
   mpu.calibrateGyro();
@@ -503,7 +503,7 @@ void updateIMU() {
   // You can find your declination on: http://magnetic-declination.com/
   // (+) Positive or (-) for negative
   // Formula: (deg + (min / 60.0)) / (180 / M_PI);
-  float declinationAngle = (0.0 + (26.0 / 60.0)) / (180 / M_PI);
+  float declinationAngle = (4.0 + (26.0 / 60.0)) / (180 / M_PI);
   headingRad += declinationAngle;
 
   // Correct for heading < 0deg and heading > 360deg
