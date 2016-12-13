@@ -9,15 +9,15 @@
 
 //------POWER MANAGEMENT--------
 #define CURR_SENSOR A2
-#define CURR_OFFSET 530 //at this value when at 0A.
+#define CURR_OFFSET 504 //at this value when at 0A.
 #define VOLT_SENSOR A3
-#define VOLT_OFFSET 1130
+#define VOLT_OFFSET 300
 #define ROLL_AVG_VALUE 40
 #define BATT_MAX_VOLT 16.8
 #define BATT_MIN_VOLT 14.5
 #define BATT_LOW_THRESHOLD 15.5
 #define BATT_MAX_CHARGE 21600 // 3600 sec * max 6A for 1 hour
-#define BATT_LOW_CHARGE 5000
+#define BATT_LOW_CHARGE 10800 //50% at 15.4V
 
 //------SERVO MANAGEMENT--------
 #define PIN_SERVO 10
@@ -149,25 +149,30 @@ void setup() {
     curr_sum += curr_avg[i];
     volt_avg[i] = analogRead(VOLT_SENSOR);
     volt_sum += volt_avg[i];
+    delay(10);
   }
   //Wait for power source > 14.4V to be detected 
   if (DEBUG) Serial.println("Waiting to detect power source > 14.4V...");
   do {
-      updateVolt();
       updateAvgVoltCurr();
-  } while (voltage < BATT_MIN_VOLT);
-
-  if (DEBUG) Serial.println("Detected power source, waiting for 2s to start up..");
+      updateVolt();
+      setPowerLED(CLR_RED);
+  } while (voltage < BATT_MIN_VOLT*1000);
+  setPowerLED(CLR_PINK);
+  
+  if (DEBUG) Serial.println("Detected power source, waiting for 5s to start up..");
   power_timer = millis();
-  while (millis() - power_timer < 2000) {
-    updateVolt();
+  while (millis() - power_timer < 5000) {
     updateAvgVoltCurr();
+    updateVolt();
+    delay(10);
   }
 
   if (DEBUG) Serial.println("Beginning operations...");
   //Initialise variable
   power_timer = millis();
   //Initialise battery charge count based on voltage
+  updateVolt();
   setChargeUsingVoltage();
   //------------END OF POWER MANAGEMENT-------
 
@@ -176,6 +181,7 @@ void setup() {
 }
 
 void loop() {
+  
   if (millis() - serialTimer > serialInterval) {
     writeSerial();
     readSerial();
@@ -288,27 +294,27 @@ void updateAvgVoltCurr() {
  * Sets the value of voltage to the rolling average
  */
 void updateVolt() {
-  //voltage = 0.0177 * (volt_sum / ROLL_AVG_VALUE) - 0.6665;  //Formula obtained by plotting in excel - Data: 17.0V 999 16.8V 988 15.8V 933 15.3 899 14.4 853 14.0V 830 
   float rawReading = map(volt_sum/ROLL_AVG_VALUE, 0, 1023, 0, 5000);
-  voltage = rawReading / 5100 * (5100 + 15000) - VOLT_OFFSET; //5100 and 15000 are the resistor values
+  voltage = (rawReading-VOLT_OFFSET) / 5100 * (5100 + 15000); //5100 and 15000 are the resistor values, calibrated with 1 odroid attached
 }
 
 String getVoltage() {
   String value = String(voltage);
-  return value;
+  return (value.substring(0,2) + "." + value.charAt(2));
 }
 
 /*
  * Sets the value of current to the rolling average
  */
 void updateCurr() {
-  current = (curr_sum / ROLL_AVG_VALUE - CURR_OFFSET) / (14.0 / 5) * 0.1;
+  current = (curr_sum / ROLL_AVG_VALUE - CURR_OFFSET) / 3 * 100; //Every 3 analog reading is 100mA
 }
 
 String getCharge() {
   String value = String(charge);
+  int strLength = value.indexOf('.');
   String output = String("");
-  switch (value.length()) {
+  switch (strLength) {
     case 2:
       output = "000" + value;
       break;
@@ -325,7 +331,7 @@ String getCharge() {
       output = value;
       break;
   }
-  return output;
+  return output.substring(0,5);
 }
 
 /*
@@ -333,10 +339,10 @@ String getCharge() {
  * Sets the power LED lights to correspond to the existing voltage of the 
  */
 void countCharge() {
-  charge -= current * ((float)time_interval / 1000.0);
-  if (voltage < BATT_MIN_VOLT) {
+  charge -= current/1000 * ((float)time_interval / 1000.0);
+  if (voltage < BATT_MIN_VOLT*1000) {
     setPowerLED(CLR_RED);
-  } else if (voltage < BATT_LOW_THRESHOLD) {
+  } else if (voltage < BATT_LOW_THRESHOLD*1000) {
     setPowerLED(CLR_YELLOW);
   } else {
     setPowerLED(CLR_GREEN);
@@ -348,10 +354,13 @@ void countCharge() {
  * Mapping range is pre-determined manually
  */ 
 void setChargeUsingVoltage() {
-  if (voltage < BATT_LOW_THRESHOLD) {
-    charge = map(voltage * 1000, BATT_MIN_VOLT * 1000, BATT_LOW_THRESHOLD * 1000, 0, BATT_LOW_CHARGE);
+  int offsetValue = voltage - 300;
+  if (offsetValue < BATT_LOW_THRESHOLD * 1000) {
+    charge = map(offsetValue, BATT_MIN_VOLT * 1000, BATT_LOW_THRESHOLD * 1000, 0, BATT_LOW_CHARGE);
+  } else if (offsetValue > BATT_MAX_VOLT * 1000) {
+    charge = BATT_MAX_CHARGE;
   } else { //voltage normal range
-    charge = map(voltage * 1000, BATT_LOW_THRESHOLD * 1000, BATT_MAX_VOLT * 1000, BATT_LOW_CHARGE, BATT_MAX_CHARGE);
+    charge = map(offsetValue, BATT_LOW_THRESHOLD * 1000, BATT_MAX_VOLT * 1000, BATT_LOW_CHARGE, BATT_MAX_CHARGE);
   }
 }
 //----END OF POWER MANAGEMENT-------
