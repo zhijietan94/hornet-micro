@@ -21,8 +21,8 @@
 
 //------SERVO MANAGEMENT--------
 #define PIN_SERVO 10
-#define SERVO_HOLD 1500
-#define SERVO_RELEASE 1900
+#define SERVO_HOLD 2150
+#define SERVO_RELEASE 1800
 
 //------LED STRIPS--------------
 #define PIN_POWER_LED 8
@@ -97,11 +97,14 @@ void setup() {
     Serial.begin(9600);
   }
   if (DEBUG) Serial.println("Serial established");
+
   //---------SERVO MANAGEMENT---------
-  //servo.attach(PIN_SERVO);
-  //servo.writeMicroseconds(SERVO_HOLD);
-  //servo_release = false
+  servo.attach(PIN_SERVO);
+  servo.writeMicroseconds(SERVO_HOLD);
+  servo_release = false;
+  if (DEBUG) Serial.println("Servo reset to default position");
   //-----END OF SERVO MANAGEMENT------
+
 
   //---------IMU MANAGEMENT-----------  
   while (!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G)) {
@@ -243,9 +246,14 @@ void readSerial() {
       setStatusLED((msg[0] - '0'));
       //Actuate servo depending on msg[1]
       if (servo_release == false && msg[1] == '1') {
-        //servo.writeMicroseconds(SERVO_RELEASE);
+        servo.writeMicroseconds(SERVO_RELEASE);
         servo_release = true;
         if (DEBUG) Serial.println("Servo Released");
+      }
+      if (servo_release == true && msg[1] == '0') {
+        servo.writeMicroseconds(SERVO_HOLD);
+        servo_release = false;
+        if (DEBUG) Serial.println("Servo Defaulted");
       }
       msgRead = false;
     }
