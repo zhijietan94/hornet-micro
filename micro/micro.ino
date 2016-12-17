@@ -129,7 +129,7 @@ void setup() {
   // Set number of samples averaged
   compass.setSamples(HMC5883L_SAMPLES_8);
   // Set calibration offset. See HMC5883L_calibration.ino
-  compass.setOffset(-154, -75);
+  compass.setOffset(40, -188); //40:-188
   // Calibrate gyroscope. The calibration must be at rest.
   // If you don't want calibrate, comment this line.
   mpu.calibrateGyro();
@@ -303,7 +303,7 @@ void updateAvgVoltCurr() {
  */
 void updateVolt() {
   float rawReading = map(volt_sum/ROLL_AVG_VALUE, 0, 1023, 0, 5000);
-  voltage = (rawReading-VOLT_OFFSET) / 5100 * (5100 + 15000); //5100 and 15000 are the resistor values, calibrated with 1 odroid attached
+  voltage = ((rawReading-VOLT_OFFSET) / 5100 * (5100 + 15000)) - 1100 ; //5100 and 15000 are the resistor values, calibrated with 1 odroid attached
 }
 
 String getVoltage() {
