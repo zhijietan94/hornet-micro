@@ -21,8 +21,8 @@
 
 //------SERVO MANAGEMENT--------
 #define PIN_SERVO 10
-#define SERVO_HOLD 2150
-#define SERVO_RELEASE 1800
+#define SERVO_HOLD 1600
+#define SERVO_RELEASE 800
 
 //------LED STRIPS--------------
 #define PIN_POWER_LED 8
@@ -93,7 +93,8 @@ void setup() {
   //---------END OF LED STRIPS--------
 
   //Wait for serial to be established
-  while (!Serial) {
+  unsigned long curTime = millis();
+  while ((millis() - curTime < 2000) && !Serial) {
     Serial.begin(9600);
   }
   if (DEBUG) Serial.println("Serial established");
@@ -156,11 +157,13 @@ void setup() {
   }
   //Wait for power source > 14.4V to be detected 
   if (DEBUG) Serial.println("Waiting to detect power source > 14.4V...");
+
   do {
       updateAvgVoltCurr();
       updateVolt();
       setPowerLED(CLR_RED);
   } while (voltage < BATT_MIN_VOLT*1000);
+  
   setPowerLED(CLR_PINK);
   
   if (DEBUG) Serial.println("Detected power source, waiting for 5s to start up..");
